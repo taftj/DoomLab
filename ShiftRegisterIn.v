@@ -1,9 +1,9 @@
-module ShiftRegisterIn(FullData, NewData, Pout, clk, reset);
+module ShiftRegisterIn(OutData, InData, Pout, clk, reset);
 
-output reg [7:0] FullData;
-input NewData, Pout, clk, reset;
+output reg [7:0] OutData;
+input InData, Pout, clk, reset;
 
-initial FullData = 8'bz;
+initial OutData = 8'bz;
 wire [9:0] X;
 
 D_FF msb (X[9], X[8], reset, clk);
@@ -15,14 +15,14 @@ D_FF rsb (X[4], X[3], reset, clk);
 D_FF ssb (X[3], X[2], reset, clk);
 D_FF tsb (X[2], X[1], reset, clk);
 D_FF usb (X[1], X[0], reset, clk);
-D_FF vsb (X[0], NewData, reset, clk);
+D_FF vsb (X[0], InData, reset, clk);
 
 always @* begin
 
 	if(Pout)
-	FullData = X[8:1];
-	else
-	FullData = 8'bz;
+	OutData = X[8:1];
+	else // EE for testing
+	OutData = 8'b11101110;
 end
 
 endmodule
