@@ -15,9 +15,10 @@ initial DataOut = 8'b11101110;
 clock16 bro4 (Clock16, CLOCK_50, reset);
 startStop bro5(DataIn, charReceived, reset, enable);
 BSC bro2(count, shift, Clock16, enable, reset);
-BIC bro3(charReceived, count, enable, reset);
-ShiftRegisterIn bro1 (shiftedData, DataIn, charReceived, shift, reset);
-
+BIC bro3(charReceived, count, enable, Clock16, kill, reset);
+ShiftRegisterIn bro1 (shiftedData, DataIn,charReceived, shift, reset);
+charRecKiller omgWhy(kill, charReceived, Clock16, reset);
+//charRecKiller(kill, charReceived, Clock16, reset);
 always @* begin
 	DataOut = shiftedData;
 end
@@ -102,17 +103,24 @@ always@ (posedge clk or posedge reset) begin
 
 endmodule
 
-module BIC(charRec, BSCstate, enable, reset);
+module BIC(charRec, BSCstate, enable, clock16, charDisable, reset);
 
-	output charRec;
+	output reg charRec;
+	input clock16;
 	input BSCstate;
 	input enable;
 	input reset;
+	input charDisable;
 	
 	reg[3:0] counter;
 	initial counter = 4'b0;
+	initial charRec = 0;
 	
-	assign charRec = (counter == 9) ? 1 : 0;
+	always @(posedge clock16) begin
+		if (counter == 9) charRec = 1;
+		if (charDisable) charRec = 0;
+	end
+	//assign charRec = (counter == 9) ? 1 : 0;
 	always @(posedge BSCstate or posedge reset or negedge enable) 
 	begin
 		if (reset) counter = 0;
@@ -156,10 +164,22 @@ module startStop(serialIn,charRec,reset,enable);
 	end
 
 endmodule
+
+module charRecKiller(kill, charReceived, Clock16, reset);
+
+output reg kill;
+input charReceived, Clock16, reset;
+reg[3:0] counter;
+initial counter = 0;
+
+always @(posedge Clock16 or posedge reset) begin
+
+	if(reset) counter = 0;
+	else if(charReceived) case(counter)
+	7: begin kill = 1; counter = 0; end
+	default: begin kill = 0; counter = counter + 1; end
+	endcase
+	else begin counter = 0;	kill = 0; end
+	end
 	
-		
-		
-	
-	
-	
-	
+endmodule
