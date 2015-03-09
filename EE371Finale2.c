@@ -10,11 +10,11 @@
 
 //data IO module addresses
 #define INBUS (volatile unsigned char *) 0x00021040
-#define OUTBUS (unsigned char *) 0x00021050
+#define OUTBUS (volatile unsigned char *) 0x00021050
 
 //command IO module addresses
 #define INSTAT (volatile unsigned char*) 0x00021030
-#define OUTCOM (unsigned char*) 0x00021020
+#define OUTCOM (volatile unsigned char*) 0x00021020
 
 //input wires
 #define CHAR_RX (*INSTAT)&0x1
@@ -32,6 +32,7 @@
 #include "sys/alt_stdio.h"
 
 //int main (int, char **, char **);
+void tom_crappy_putc(unsigned char data);
 int main(int argc, char** argv, char** envp){
 
 	//recieve buffer
@@ -52,13 +53,19 @@ int main(int argc, char** argv, char** envp){
 	 *        alt_getchar      Smaller overhead than getchar with direct drivers
 	 *
 	 */
-	*OUTBUS = 0;
-	*INBUS = 0;
-	*OUTCOM = 0;
-	*INSTAT = 0;
+	//*OUTBUS = 0;
+	//*INBUS = 0;
+	//*OUTCOM = 0;
+	//*INSTAT = 0;
+	tom_crappy_putc(0xAA);
+	tom_crappy_putc(0xBB);
+	tom_crappy_putc(0xCC);
+	tom_crappy_putc(0xDD);
+	//tom_crappy_putc(0xBE);
+	//tom_crappy_putc(0xEF);//while(1);
 	//TX_EN(0);
 	//LOAD(0);
-	int i = 0;
+	/*int i = 0;
 
 		TXBUFF = 0xCE;
 		*OUTBUS = TXBUFF;
@@ -78,7 +85,41 @@ int main(int argc, char** argv, char** envp){
 		*OUTBUS = 0xFF;
 		TXBUFF = 0;
 		RXBUFF = 0;
-		delay(500);
+		delay(500);*/
 
 		return 0;
+}
+
+void tom_crappy_putc(unsigned char data) {
+	int i = 0;
+	unsigned char TXBUFF = 0;
+	unsigned char RXBUFF = 0;
+
+	alt_printf("Sending: %x\n", data);
+	*OUTCOM = 0;
+
+	//TXBUFF = data;
+	*OUTBUS = data;
+
+	//*OUTCOM = 0x0;
+	delay(100);
+	*OUTCOM = 0x3;
+	delay(10);
+	*OUTCOM = 0x2;
+	while (!CHAR_TX);
+	*OUTCOM = 0x0; //tell hardware that transmission is complete
+	//wait until response character is received
+	while (!CHAR_RX);
+	//delay(1500);
+	//it is at this point that we shall load the input bus into the 8-bit input buffer (let it be so)
+	RXBUFF = *INBUS;
+
+	*OUTBUS = 0;
+	*OUTCOM = 0;
+	TXBUFF = 0;
+	RXBUFF = 0;
+	delay(500);
+	alt_printf("Received: %x\n", *INBUS);
+
+	return;
 }
