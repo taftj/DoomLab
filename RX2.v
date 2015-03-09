@@ -18,10 +18,13 @@ initial DataOut = 8'b10111011; //BB
 
 clock16 rxClock16(Clock16, CLOCK_50, reset);
 startStop rxEnabler(DataIn, charReceived, reset, enable);
-BSC rxBSC(count, shift, Clock16, enable, reset);
+//BSC rxBSC(count, shift, Clock16, enable, reset);
 BIC rxBIC(charReceived, count, enable, Clock16, kill, reset);
 ShiftRegisterIn RXSFR(shiftedData, DataIn,charReceived, shift,CLOCK_50, reset);
 charRecKiller rxClear(kill, charReceived, Clock16, reset);
+
+/*BSC_sampler rxSamp(count, Clock16, enable, reset);
+BSC_clockCom rxCom(shift, Clock16, enable, reset);*/
 //charRecKiller(kill, charReceived, Clock16, reset);
 always @(posedge charReceived or posedge reset) begin
 	if (reset) DataOut = 8'b00011000;
@@ -36,7 +39,7 @@ output reg [7:0] OutData;
 input InData, Pout, clk, reset, CLOCK_50;
 
 initial OutData = 8'b11101110;
-wire [7:0] X;
+wire [0:7] X;
 
 //D_FF msb (X[9], X[8], reset, clk);
 D_FF nsb (X[7], X[6], reset, clk);
@@ -52,7 +55,7 @@ D_FF usb (X[0], InData, reset, clk);
 always @(posedge reset or posedge Pout or posedge CLOCK_50) begin
 	
 	 if(reset) OutData[7:0] = 8'b11101111; 
-	 else OutData[7:0] = X[7:0];
+	 else OutData[7:0] = X[0:7];
 	
 	//else // EE for testing
 	//OutData = 8'b11101110;
