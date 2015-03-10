@@ -1,5 +1,59 @@
 
-module BSC(count, clk_ctrl, clk, enable, reset);
+/*BSC_clockCom
+inputs: clock  (clock16, controls counter)
+		  enable (whether TX/RX module is to be used)
+		  reset  (master reset for system)
+output: this one counts the number of bits read/sent
+*/
+module BSC_clockCom(commander, clock, enable, reset);
+input clock, enable, reset;
+output reg commander;
+reg [3:0] counter;
+initial counter = 4'b1000;
+initial commander = 1'b0;
+
+always@ (posedge clock or posedge reset or negedge enable) begin
+	if (reset) begin counter = 4'b1000; commander = 1'b0; end	 //OMG we did not even use reset
+	else if(!enable) begin counter = 4'b1000; commander = 1'b0; end
+	else begin 
+		case(counter) 
+		4'b0111: begin commander = 1'b1; counter = counter + 4'b1; end
+		default: begin commander = 1'b0; counter = counter + 4'b1; end
+		endcase
+	end
+end
+
+endmodule
+
+/*BSC_sampler
+inputs: clock  (clock16, controls counter)
+		  enable (whether TX/RX module is to be used)
+		  reset  (master reset for system)
+output: whether or not to sample the 1-bit I/O bus
+*/
+module BSC_sampler(commander, clock, enable, reset);
+input clock, enable, reset;
+output reg commander;
+reg [3:0] counter;
+initial counter = 4'b0;
+initial commander = 1'b0;
+
+always@ (posedge clock or posedge reset or negedge enable) begin
+	if (reset) begin counter = 4'b0; /*commander = 1'b0;*/ end	 //OMG we did not even use reset
+	else if(!enable) begin counter = 4'b0; /*commander = 1'b0;*/ end
+	else begin 
+		case(counter) 
+		4'b1111: begin commander = 1'b1; counter = counter + 4'b1; end
+		default: begin commander = 1'b0; counter = counter + 4'b1; end
+		endcase
+	end
+end
+
+endmodule
+
+
+
+/*module BSC(count, clk_ctrl, clk, enable, reset);
 
 //For the BSC, state 0000 indicates the start of a bit, 0111 indicates the middle, and 1111 indicates the end of the bit. 
 
@@ -26,9 +80,9 @@ always@ (posedge clk or posedge reset or negedge enable) begin
 		default: begin count = 1'b0; clk_ctrl = 1'b0; counter = counter + 4'b1; end
 		endcase
 	end
-end*
+end
 
-endmodule
+endmodule*/
 module BIC(charRec, BSCstate, enable, clock16, charDisable, reset);
 
 	output reg charRec;
